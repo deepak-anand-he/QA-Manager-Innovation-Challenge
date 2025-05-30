@@ -13,13 +13,13 @@ import {
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider, DateRangePicker } from '@mui/x-date-pickers-pro';
 import dayjs from 'dayjs';
+// Import credentials from a properties file (e.g., src/config/jira.properties.js)
+import jiraConfig from '../../config/jira.properties';
 
 const JIRA_API_URL = 'https://pgga-es.atlassian.net/rest/api/3/project/search';
 
 const fetchProjects = async () => {
-  // WARNING: Never expose credentials in frontend in production!
-  const username = 'deepak-anand.mani@hitachienergy.com';
-  const apiToken = 'ATATT3xFfGF0lyPJ7Kz7eNZCVyi7objaeIuKesrR46yMN1SQH_lxJKh0JRXhboTvkd_Vhjql28TlizkTcXKieVTf5kYu9O3ayN5hbKSOoVu6dgBp4EGA9TSpVjJQcyK7kkknurjn8nV8yqJ0iseZ_wfTM1cbRQgfGpJBL6ufZstFpcJ_hohvR_k=8C4F7AEE';
+  const { username, apiToken } = jiraConfig;
   const response = await fetch(JIRA_API_URL, {
     headers: {
       'Authorization': 'Basic ' + btoa(`${username}:${apiToken}`),
@@ -45,11 +45,31 @@ const ProjectStatusModule = () => {
         setProjects(data);
         setLoading(false);
       })
-      .catch((err) => {
-        setError('Could not fetch projects. Check CORS or credentials.');
+      .catch(() => {
+        setError('Could not fetch projects. Check proxy or credentials.');
         setLoading(false);
       });
   }, []);
+
+  // Select All logic
+  const allProjectNames = projects.map((p) => p.name || p.key);
+  const isAllSelected =
+    allProjectNames.length > 0 &&
+    allProjectNames.every((name) => selectedProjects.includes(name));
+  const isIndeterminate =
+    selectedProjects.length > 0 && !isAllSelected;
+
+  const handleSelectAll = (event) => {
+    if (event.target.checked) {
+      setSelectedProjects([...new Set([...selectedProjects, ...allProjectNames])]);
+    } else {
+      setSelectedProjects(selectedProjects.filter((name) => !allProjectNames.includes(name)));
+    }
+  };
+
+  const handleProjectChange = (event) => {
+    setSelectedProjects(event.target.value);
+  };
 
   return (
     <Box
@@ -75,23 +95,36 @@ const ProjectStatusModule = () => {
               multiple
               displayEmpty
               value={selectedProjects}
-              onChange={e => setSelectedProjects(e.target.value)}
+              onChange={handleProjectChange}
               input={<OutlinedInput />}
               renderValue={selected => selected.length === 0 ? "Select Projects" : selected.join(', ')}
               sx={{ width: 250, background: 'white' }}
+              MenuProps={{ PaperProps: { style: { maxHeight: 300 } } }}
             >
-              {projects.map((project) => (
-                <MenuItem key={project.id} value={project.name || project.key}>
-                  <Checkbox checked={selectedProjects.indexOf(project.name || project.key) > -1} />
-                  <ListItemText primary={project.name || project.key} />
-                </MenuItem>
-              ))}
+              <MenuItem>
+                <Checkbox
+                  indeterminate={isIndeterminate}
+                  checked={isAllSelected}
+                  onChange={handleSelectAll}
+                />
+                <ListItemText primary="Select All" />
+              </MenuItem>
+              {projects.map((project) => {
+                const name = project.name || project.key;
+                return (
+                  <MenuItem key={project.id} value={name}>
+                    <Checkbox checked={selectedProjects.indexOf(name) > -1} />
+                    <ListItemText primary={name} />
+                  </MenuItem>
+                );
+              })}
             </Select>
           )}
         </Box>
 
         {/* Date Range Picker (Center Right) */}
         <Box sx={{ flex: 1, paddingLeft: '100px', paddingRight: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>Select Date Range</Typography>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DateRangePicker
               value={dateRange}
@@ -106,8 +139,9 @@ const ProjectStatusModule = () => {
       {/* Table Container below the selectors */}
       <Paper
         sx={{
-          backgroundColor: '#e0e0e0',
-          p: '10px',
+          backgroundColor: '#FFF9DB', // Pastel Yellow
+          border: '2px solid #E2E2E2',
+          p: '15px',
           width: '100%',
           minHeight: 120,
           mt: 2,
@@ -115,7 +149,7 @@ const ProjectStatusModule = () => {
           flexDirection: 'row',
           gap: 4,
           alignItems: 'flex-start',
-          justifyContent: 'center',
+          justifyContent: 'space-between',
         }}
       >
         {/* TextArea1: Start Date */}
@@ -123,7 +157,7 @@ const ProjectStatusModule = () => {
           sx={{
             background: 'teal',
             color: 'white',
-            p: '20px',
+            p: '5px',
             height: '100px',
             width: '200px',
             borderRadius: 2,
@@ -131,6 +165,7 @@ const ProjectStatusModule = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'flex-start',
+            marginLeft: '150px',
           }}
         >
           <Typography sx={{ fontSize: '14px', textAlign: 'center', width: '100%' }}>
@@ -157,6 +192,7 @@ const ProjectStatusModule = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'flex-start',
+            marginRight: '150px',
           }}
         >
           <Typography sx={{ fontSize: '14px', textAlign: 'center', width: '100%' }}>
