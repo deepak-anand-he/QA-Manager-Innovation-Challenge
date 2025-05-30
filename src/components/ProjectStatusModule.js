@@ -14,7 +14,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider, DateRangePicker } from '@mui/x-date-pickers-pro';
 import dayjs from 'dayjs';
 // Import credentials from a properties file (e.g., src/config/jira.properties.js)
-import jiraConfig from '../../config/jira.properties';
+// import jiraConfig from '../../config/jira.properties';
+import { jiraConfig } from '../config/jira.properties';
 
 const JIRA_API_URL = 'https://pgga-es.atlassian.net/rest/api/3/project/search';
 
